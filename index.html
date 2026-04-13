@@ -769,59 +769,113 @@
       }
     };
 
-    // Balanced personality formulas built on the accumulated trait dimensions
-    function scorePersonalities(traits) {
-      return {
-        healing_floater:
-          traits.mood * 2.2 +
-          traits.emotionalDepth * 1.2 +
-          traits.introspection * 1.1 +
-          traits.spatiality * 0.8 -
-          traits.energy * 0.4,
+    const traitKeys = ["mood", "energy", "emotionalDepth", "spatiality", "imagination", "rhythm", "urbanity", "introspection"];
 
-        romantic_drifter:
-          traits.emotionalDepth * 1.8 +
-          traits.imagination * 1.4 +
-          traits.mood * 1.1 +
-          traits.spatiality * 0.8 +
-          traits.introspection * 0.9,
+    // Trait profiles (0-1) for each result, used as explicit target vectors.
+    const personalityProfiles = {
+      healing_floater:   { mood: 0.92, energy: 0.12, emotionalDepth: 0.64, spatiality: 0.52, imagination: 0.46, rhythm: 0.20, urbanity: 0.08, introspection: 0.70 },
+      romantic_drifter:  { mood: 0.62, energy: 0.22, emotionalDepth: 0.86, spatiality: 0.54, imagination: 0.70, rhythm: 0.26, urbanity: 0.12, introspection: 0.62 },
+      energy_driver:     { mood: 0.28, energy: 0.96, emotionalDepth: 0.24, spatiality: 0.22, imagination: 0.20, rhythm: 0.86, urbanity: 0.46, introspection: 0.12 },
+      emotional_resonator:{ mood: 0.42, energy: 0.10, emotionalDepth: 0.94, spatiality: 0.36, imagination: 0.34, rhythm: 0.16, urbanity: 0.10, introspection: 0.90 },
+      spatial_explorer:  { mood: 0.38, energy: 0.18, emotionalDepth: 0.40, spatiality: 0.95, imagination: 0.78, rhythm: 0.20, urbanity: 0.22, introspection: 0.62 },
+      urban_observer:    { mood: 0.30, energy: 0.56, emotionalDepth: 0.28, spatiality: 0.30, imagination: 0.26, rhythm: 0.62, urbanity: 0.95, introspection: 0.20 },
+      creative_dreamer:  { mood: 0.46, energy: 0.24, emotionalDepth: 0.44, spatiality: 0.64, imagination: 0.95, rhythm: 0.24, urbanity: 0.18, introspection: 0.44 },
+      rhythm_rider:      { mood: 0.34, energy: 0.80, emotionalDepth: 0.24, spatiality: 0.24, imagination: 0.20, rhythm: 0.96, urbanity: 0.42, introspection: 0.12 }
+    };
 
-        energy_driver:
-          traits.energy * 2.3 +
-          traits.rhythm * 1.4 +
-          traits.urbanity * 0.5 -
-          traits.introspection * 0.2,
+    // Global trait importance used by similarity/distance metrics.
+    const traitWeights = {
+      mood: 0.95,
+      energy: 1.0,
+      emotionalDepth: 1.1,
+      spatiality: 0.95,
+      imagination: 0.95,
+      rhythm: 0.95,
+      urbanity: 0.9,
+      introspection: 1.0
+    };
 
-        emotional_resonator:
-          traits.emotionalDepth * 2.3 +
-          traits.introspection * 1.9 +
-          traits.mood * 0.5 -
-          traits.energy * 0.2,
+    function buildTraitRanges() {
+      const ranges = {};
+      traitKeys.forEach((trait) => {
+        ranges[trait] = { min: 0, max: 0 };
+      });
 
-        spatial_explorer:
-          traits.spatiality * 2.3 +
-          traits.imagination * 1.5 +
-          traits.introspection * 0.7 +
-          traits.mood * 0.3,
+      quizData.forEach((question) => {
+        const options = Object.values(answerTraitMap[question.id]);
+        traitKeys.forEach((trait) => {
+          const values = options.map((option) => option[trait] ?? 0);
+          ranges[trait].min += Math.min(...values);
+          ranges[trait].max += Math.max(...values);
+        });
+      });
 
-        urban_observer:
-          traits.urbanity * 2.4 +
-          traits.rhythm * 1.1 +
-          traits.energy * 0.7 +
-          traits.spatiality * 0.4,
+      return ranges;
+    }
 
-        creative_dreamer:
-          traits.imagination * 2.4 +
-          traits.spatiality * 1.0 +
-          traits.mood * 0.7 +
-          traits.emotionalDepth * 0.6,
+    const traitRanges = buildTraitRanges();
 
-        rhythm_rider:
-          traits.rhythm * 2.2 +
-          traits.energy * 1.5 +
-          traits.urbanity * 0.6 +
-          traits.mood * 0.2
-      };
+    function normalizeTraits(rawTraits) {
+      const normalized = {};
+      traitKeys.forEach((trait) => {
+        const min = traitRanges[trait].min;
+        const max = traitRanges[trait].max;
+        const span = max - min;
+        const value = span > 0 ? (rawTraits[trait] - min) / span : 0;
+        normalized[trait] = Math.max(0, Math.min(1, value));
+      });
+      return normalized;
+    }
+
+    function weightedCosineSimilarity(a, b) {
+      let dot = 0;
+      let normA = 0;
+      let normB = 0;
+      traitKeys.forEach((trait) => {
+        const w = traitWeights[trait];
+        dot += w * a[trait] * b[trait];
+        normA += w * a[trait] * a[trait];
+        normB += w * b[trait] * b[trait];
+      });
+      if (normA === 0 || normB === 0) return 0;
+      return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+    }
+
+    function weightedDistanceSimilarity(a, b) {
+      let weightedSquaredDistance = 0;
+      let totalWeight = 0;
+      traitKeys.forEach((trait) => {
+        const w = traitWeights[trait];
+        const diff = a[trait] - b[trait];
+        weightedSquaredDistance += w * diff * diff;
+        totalWeight += w;
+      });
+      if (totalWeight === 0) return 0;
+      const normalizedDistance = Math.sqrt(weightedSquaredDistance / totalWeight);
+      return 1 - normalizedDistance;
+    }
+
+    function coreTraitAlignment(userTraits, profile) {
+      const topTraits = traitKeys
+        .slice()
+        .sort((a, b) => profile[b] - profile[a])
+        .slice(0, 3);
+      const alignment = topTraits.reduce((sum, trait) => sum + Math.min(userTraits[trait], profile[trait]), 0);
+      return alignment / topTraits.length;
+    }
+
+    function scorePersonalities(rawTraits) {
+      const traits = normalizeTraits(rawTraits);
+      const scores = {};
+
+      Object.entries(personalityProfiles).forEach(([key, profile]) => {
+        const cosine = weightedCosineSimilarity(traits, profile);
+        const distance = weightedDistanceSimilarity(traits, profile);
+        const core = coreTraitAlignment(traits, profile);
+        scores[key] = cosine * 0.5 + distance * 0.3 + core * 0.2;
+      });
+
+      return scores;
     }
 
     const state = {
