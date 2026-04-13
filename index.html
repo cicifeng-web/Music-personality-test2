@@ -899,6 +899,7 @@
     function renderQuestions() {
       quizData.forEach((question, index) => {
         const screen = document.querySelector(`[data-screen="question-${index + 1}"]`);
+        const isLastQuestion = question.id === quizData[quizData.length - 1].id;
         screen.innerHTML = `
           <div class="screen-inner">
             <div class="panel">
@@ -925,11 +926,16 @@
               </div>
 
               <div class="question-footer">
-                <button class="btn" type="button" data-nav="prev">${index === quizData.length - 1 ? "Submit" : "Back"}</button>
+                <button class="btn" type="button" data-nav="prev">${isLastQuestion ? "Submit" : "Back"}</button>
               </div>
             </div>
           </div>
         `;
+
+        if (isLastQuestion) {
+          const lastBtn = screen.querySelector("[data-nav='prev']");
+          if (lastBtn) lastBtn.textContent = "Submit";
+        }
       });
     }
 
