@@ -105,9 +105,43 @@
 
     .screens {
       position: relative;
+      z-index: 1;
       height: 100%;
       min-height: 100vh;
       min-height: 100dvh;
+    }
+
+    /* Viewport-fixed layer: outside any transformed .screen so it truly stays put while .screen-inner scrolls */
+    .screen-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .screen-backdrop::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(180deg, rgba(4, 8, 16, 0.36), rgba(4, 8, 16, 0.82)),
+        linear-gradient(rgba(4, 8, 16, 0.28), rgba(4, 8, 16, 0.28)),
+        var(--bg-image);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .screen-backdrop::after {
+      content: "";
+      position: absolute;
+      inset: -10%;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(158, 220, 255, 0.15), transparent 24%),
+        radial-gradient(circle at 80% 28%, rgba(255, 255, 255, 0.08), transparent 18%),
+        radial-gradient(circle at 52% 80%, rgba(105, 148, 255, 0.12), transparent 24%);
+      filter: blur(42px);
+      animation: drift 16s ease-in-out infinite alternate;
     }
 
     .screen {
@@ -123,36 +157,6 @@
         transform var(--ease),
         visibility 0s linear var(--ease);
       overflow: hidden;
-    }
-
-    /* Fixed to .screen (viewport-sized); does not move when .screen-inner scrolls */
-    .screen::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(180deg, rgba(4, 8, 16, 0.36), rgba(4, 8, 16, 0.82)),
-        linear-gradient(rgba(4, 8, 16, 0.28), rgba(4, 8, 16, 0.28)),
-        var(--bg-image);
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    .screen::after {
-      content: "";
-      position: fixed;
-      inset: -10%;
-      background:
-        radial-gradient(circle at 18% 20%, rgba(158, 220, 255, 0.15), transparent 24%),
-        radial-gradient(circle at 80% 28%, rgba(255, 255, 255, 0.08), transparent 18%),
-        radial-gradient(circle at 52% 80%, rgba(105, 148, 255, 0.12), transparent 24%);
-      filter: blur(42px);
-      animation: drift 16s ease-in-out infinite alternate;
-      z-index: 1;
-      pointer-events: none;
     }
 
     .screen-inner {
@@ -515,6 +519,7 @@
     </div>
 
     <main class="screens" id="screens">
+      <div class="screen-backdrop" id="screenBackdrop" aria-hidden="true"></div>
       <section
         class="screen active"
         data-screen="intro"
@@ -827,8 +832,15 @@
     const screenOrder = ["intro", ...quizData.map((_, i) => `question-${i + 1}`), "result"];
     const screens = Array.from(document.querySelectorAll(".screen"));
     const screensRoot = document.getElementById("screens");
+    const screenBackdrop = document.getElementById("screenBackdrop");
     const progressLabel = document.getElementById("progressLabel");
     const progressBar = document.getElementById("progressBar");
+
+    function syncBackdropBackground(screenEl) {
+      if (!screenBackdrop || !screenEl) return;
+      const v = screenEl.style.getPropertyValue("--bg-image");
+      if (v) screenBackdrop.style.setProperty("--bg-image", v.trim());
+    }
 
     function renderQuestions() {
       quizData.forEach((question, index) => {
@@ -894,6 +906,7 @@
         (screen) => screen.dataset.screen === screenOrder[state.currentScreen]
       );
       if (activeScreen) {
+        syncBackdropBackground(activeScreen);
         const inner = activeScreen.querySelector(".screen-inner");
         if (inner) inner.scrollTop = 0;
       }
@@ -990,6 +1003,7 @@
 
     renderQuestions();
     updateProgress();
+    syncBackdropBackground(document.querySelector(".screen.active"));
 
     document.getElementById("startBtn").addEventListener("click", () => showScreen(1));
     document.getElementById("retakeBtn").addEventListener("click", resetQuiz);
