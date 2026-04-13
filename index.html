@@ -113,7 +113,8 @@
     .screen {
       position: absolute;
       inset: 0;
-      display: block;
+      display: flex;
+      flex-direction: column;
       opacity: 0;
       visibility: hidden;
       transform: translate3d(0, 28px, 0) scale(1.015);
@@ -121,33 +122,14 @@
         opacity var(--ease),
         transform var(--ease),
         visibility 0s linear var(--ease);
-      overflow-x: hidden;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: contain;
+      overflow: hidden;
     }
 
-    .screen-inner {
-      position: relative;
-      z-index: 0;
-      box-sizing: border-box;
-      min-height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 86px 18px 26px;
-    }
-
-    /* Full-height background + tint: tied to scrollable content so top/bottom stay consistent */
-    .screen-inner::before {
+    /* Fixed to .screen (viewport-sized); does not move when .screen-inner scrolls */
+    .screen::before {
       content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      min-height: 100%;
+      position: fixed;
+      inset: 0;
       background-image:
         linear-gradient(180deg, rgba(4, 8, 16, 0.36), rgba(4, 8, 16, 0.82)),
         linear-gradient(rgba(4, 8, 16, 0.28), rgba(4, 8, 16, 0.28)),
@@ -159,14 +141,10 @@
       pointer-events: none;
     }
 
-    .screen-inner::after {
+    .screen::after {
       content: "";
-      position: absolute;
-      left: -10%;
-      right: -10%;
-      top: -10%;
-      bottom: -10%;
-      min-height: 110%;
+      position: fixed;
+      inset: -10%;
       background:
         radial-gradient(circle at 18% 20%, rgba(158, 220, 255, 0.15), transparent 24%),
         radial-gradient(circle at 80% 28%, rgba(255, 255, 255, 0.08), transparent 18%),
@@ -177,9 +155,21 @@
       pointer-events: none;
     }
 
-    .screen-inner > * {
+    .screen-inner {
       position: relative;
       z-index: 2;
+      box-sizing: border-box;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 86px 18px 26px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
     }
 
     .screen.active {
@@ -904,7 +894,8 @@
         (screen) => screen.dataset.screen === screenOrder[state.currentScreen]
       );
       if (activeScreen) {
-        activeScreen.scrollTop = 0;
+        const inner = activeScreen.querySelector(".screen-inner");
+        if (inner) inner.scrollTop = 0;
       }
     }
 
