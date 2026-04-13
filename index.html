@@ -925,7 +925,7 @@
               </div>
 
               <div class="question-footer">
-                <button class="btn" type="button" data-nav="prev">Back</button>
+                <button class="btn" type="button" data-nav="prev">${index === quizData.length - 1 ? "Submit" : "Back"}</button>
               </div>
             </div>
           </div>
@@ -1037,7 +1037,7 @@
 
     async function shareResult() {
       const resultName = document.getElementById("resultName").textContent;
-      const text = `I got ${resultName} in Find Your Music Personality.`;
+      const text = `I got ${resultName} in Find Your Music Personality. Come and see what's your music personality! https://cicifeng-web.github.io/Music-personality-test2/`;
 
       if (navigator.share) {
         try {
