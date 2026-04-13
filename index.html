@@ -967,6 +967,11 @@
       );
       if (activeScreen) {
         syncBackdropBackground(activeScreen);
+        const currentId = activeScreen.dataset.screen || "";
+        const navBtn = activeScreen.querySelector("[data-nav='prev']");
+        if (navBtn) {
+          navBtn.textContent = currentId === `question-${quizData.length}` ? "Submit" : "Back";
+        }
         const inner = activeScreen.querySelector(".screen-inner");
         if (inner) inner.scrollTop = 0;
       }
