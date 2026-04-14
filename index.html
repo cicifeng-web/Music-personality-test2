@@ -420,6 +420,29 @@
       letter-spacing: -0.05em;
     }
 
+    .result-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(128px, 20vw, 186px);
+      gap: 18px;
+      align-items: center;
+    }
+
+    .result-hero-text {
+      min-width: 0;
+      text-align: left;
+    }
+
+    .result-portrait {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+      justify-self: center;
+    }
+
     .keywords {
       display: flex;
       flex-wrap: wrap;
@@ -466,6 +489,16 @@
 
       .result-card {
         padding: 20px;
+      }
+
+      .result-hero {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .result-portrait {
+        width: min(42vw, 168px);
+        justify-self: center;
       }
 
       .btn {
@@ -587,7 +620,12 @@
         <div class="panel result-panel">
           <div class="result-card">
             <p class="section-label">Personality Type</p>
-            <h2 class="result-name" id="resultName">-</h2>
+            <div class="result-hero">
+              <div class="result-hero-text">
+                <h2 class="result-name" id="resultName">-</h2>
+              </div>
+              <img class="result-portrait" id="resultPortrait" alt="Personality portrait" loading="lazy" />
+            </div>
 
             <p class="section-label">Personality Keywords</p>
             <div class="keywords" id="resultKeywords"></div>
@@ -737,41 +775,49 @@
     const personalities = {
       healing_floater: {
         name: "Healing Floater",
+        image: "./image/healing_floater.png",
         keywords: ["Soft", "Calming", "Gentle", "Restorative"],
         description: "You move through music like exhaled air: quiet, soothing, and beautifully unforced. Sound becomes a place where your nervous system settles and the world softens around you."
       },
       romantic_drifter: {
         name: "Romantic Drifter",
+        image: "./image/romantic_drifter.png",
         keywords: ["Dreamy", "Intimate", "Poetic", "Tender"],
         description: "You are drawn to music with emotional glow and cinematic closeness. Every song feels like a private scene, lit softly and remembered for longer than it lasts."
       },
       energy_driver: {
         name: "Energy Driver",
+        image: "./image/energy_driver.png",
         keywords: ["Bold", "Dynamic", "Intense", "Charged"],
         description: "You want music to move with force and intention. It is momentum, ignition, and adrenaline translated into sound."
       },
       emotional_resonator: {
         name: "Emotional Resonator",
+        image: "./image/emotional_resonator.png",
         keywords: ["Deep", "Sensitive", "Introspective", "Rich"],
         description: "You hear beyond the surface. Music meets you in private places, holding feeling, memory, and depth with uncommon clarity."
       },
       spatial_explorer: {
         name: "Spatial Explorer",
+        image: "./image/spatial_explorer.png",
         keywords: ["Vast", "Atmospheric", "Curious", "Transcendent"],
         description: "You are drawn to expansiveness, distance, and sonic architecture. Music feels like entering a larger world and wandering through it without urgency."
       },
       urban_observer: {
         name: "Urban Observer",
+        image: "./image/urban_observer.png",
         keywords: ["Cool", "Composed", "Modern", "City-Minded"],
         description: "You gravitate toward music with clean edges, understated motion, and metropolitan perspective. It matches the pace of movement without losing its calm."
       },
       creative_dreamer: {
         name: "Creative Dreamer",
+        image: "./image/creative_dreamer.png",
         keywords: ["Imaginative", "Artistic", "Surreal", "Inspired"],
         description: "You listen for images, ideas, and strange beauty. Music opens creative weather inside you, where moods become color and thought becomes atmosphere."
       },
       rhythm_rider: {
         name: "Rhythm Rider",
+        image: "./image/rhythm_rider.png",
         keywords: ["Kinetic", "Groove-Led", "Playful", "Pulse-Driven"],
         description: "You connect with music through movement first. Groove, bounce, and physical pulse are what make sound come alive in your body."
       }
@@ -1019,6 +1065,11 @@
       document.getElementById("resultKeywords").innerHTML = result.keywords
         .map((keyword) => `<span class="keyword">${keyword}</span>`)
         .join("");
+      const portrait = document.getElementById("resultPortrait");
+      if (portrait) {
+        portrait.src = result.image;
+        portrait.alt = `${result.name} portrait`;
+      }
     }
 
     function resetQuiz() {
