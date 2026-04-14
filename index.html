@@ -926,16 +926,12 @@
               </div>
 
               <div class="question-footer">
-                <button class="btn" type="button" data-nav="prev">${isLastQuestion ? "Submit" : "Back"}</button>
+                <button class="btn" type="button" data-nav="prev">Back</button>
+                ${isLastQuestion ? '<button class="btn primary" type="button" data-nav="submit">Submit</button>' : ""}
               </div>
             </div>
           </div>
         `;
-
-        if (isLastQuestion) {
-          const lastBtn = screen.querySelector("[data-nav='prev']");
-          if (lastBtn) lastBtn.textContent = "Submit";
-        }
       });
     }
 
@@ -967,11 +963,6 @@
       );
       if (activeScreen) {
         syncBackdropBackground(activeScreen);
-        const currentId = activeScreen.dataset.screen || "";
-        const navBtn = activeScreen.querySelector("[data-nav='prev']");
-        if (navBtn) {
-          navBtn.textContent = currentId === `question-${quizData.length}` ? "Submit" : "Back";
-        }
         const inner = activeScreen.querySelector(".screen-inner");
         if (inner) inner.scrollTop = 0;
       }
@@ -1036,14 +1027,18 @@
       state.answers[questionId] = optionKey;
       setSelected(questionId, optionKey);
 
+      if (questionIndex === quizData.length - 1) return;
+
       setTimeout(() => {
-        if (questionIndex === quizData.length - 1) {
-          renderResult();
-          showScreen(screenOrder.length - 1);
-        } else {
-          showScreen(questionIndex + 2);
-        }
+        showScreen(questionIndex + 2);
       }, 220);
+    }
+
+    function submitLastQuestion() {
+      const lastQuestionId = quizData[quizData.length - 1].id;
+      if (!state.answers[lastQuestionId]) return;
+      renderResult();
+      showScreen(screenOrder.length - 1);
     }
 
     async function shareResult() {
@@ -1077,9 +1072,15 @@
     screensRoot.addEventListener("click", (event) => {
       const option = event.target.closest(".option");
       const back = event.target.closest("[data-nav='prev']");
+      const submit = event.target.closest("[data-nav='submit']");
 
       if (option) {
         handleAnswer(option);
+        return;
+      }
+
+      if (submit) {
+        submitLastQuestion();
         return;
       }
 
